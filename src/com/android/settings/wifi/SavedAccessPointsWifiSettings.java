@@ -127,10 +127,12 @@ public class SavedAccessPointsWifiSettings extends SettingsPreferenceFragment
         final List<AccessPoint> accessPoints =
                 WifiSavedConfigUtils.getAllConfigs(context, mWifiManager);
         Collections.sort(accessPoints, SAVED_NETWORK_COMPARATOR);
-        preferenceScreen.removeAll();
+        cacheRemoveAllPrefs(preferenceScreen);
 
         final int accessPointsSize = accessPoints.size();
-        for (int i = 0; i < accessPointsSize; ++i){
+        for (int i = 0; i < accessPointsSize; ++i) {
+            AccessPoint ap = accessPoints.get(i);
+            String key = AccessPointPreference.generatePreferenceKey(ap);
             LongPressAccessPointPreference preference =
                     new LongPressAccessPointPreference(accessPoints.get(i), context,
                             mUserBadgeCache, true, this);
@@ -144,8 +146,17 @@ public class SavedAccessPointsWifiSettings extends SettingsPreferenceFragment
                 // In this case, restored mSelectedAccessPoint needs to be updated because
                 // it haven't been set a tag of the corresponding AccessPointPreference.
                 mSelectedAccessPoint = preference.getAccessPoint();
+                    (LongPressAccessPointPreference) getCachedPreference(key);
+            if (preference == null) {
+                preference = new LongPressAccessPointPreference(
+                        ap, context, mUserBadgeCache, true, this);
+                preference.setKey(key);
+                preference.setIcon(null);
+                preferenceScreen.addPreference(preference);
             }
         }
+
+        removeCachedPrefs(preferenceScreen);
 
         if(getPreferenceScreen().getPreferenceCount() < 1) {
             Log.w(TAG, "Saved networks activity loaded, but there are no saved networks!");
